@@ -1,41 +1,54 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calendário Despertador IA</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-      margin: 0; min-height: 100vh; display: grid; place-items: center;
-      background: linear-gradient(160deg, #0f172a, #1e3a5f 50%, #0ea5e9);
-      color: #f8fafc;
-    }
-    .card {
-      max-width: 420px; margin: 1.5rem; padding: 2rem;
-      background: rgba(15, 23, 42, 0.85); border-radius: 1rem;
-      box-shadow: 0 20px 50px rgba(0,0,0,.35); text-align: center;
-    }
-    h1 { font-size: 1.6rem; margin: 0 0 .75rem; }
-    p { line-height: 1.5; opacity: .9; }
-    a.btn, button.btn {
-      display: inline-block; margin: 1.25rem 0 .75rem; padding: .9rem 1.4rem;
-      background: #38bdf8; color: #0f172a; font-weight: 700; text-decoration: none;
-      border-radius: .75rem; font-size: 1.05rem; border: 0; cursor: pointer;
-    }
-    a.btn:hover, button.btn:hover { background: #7dd3fc; }
-    .tip { font-size: .9rem; opacity: .8; }
-    #status { font-size: .85rem; min-height: 1.2em; opacity: .85; }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Calendário Despertador IA</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:28rem;margin:2rem auto;padding:0 1rem;line-height:1.5;background:#f7f7f8;color:#111}
+a.btn,button.btn{display:inline-block;background:#111;color:#fff;padding:.9rem 1.2rem;border-radius:10px;text-decoration:none;font-weight:600;border:0;cursor:pointer;font-size:1rem}
+p.note{color:#555;font-size:.95rem}
+#status{margin-top:1rem;color:#333}
+</style>
 </head>
 <body>
-  <main class="card">
-    <h1>Calendário Despertador IA</h1>
-    <p>Baixe o APK de debug do aplicativo Android.</p>
-    <a class="btn" id="direct" href="/CalendarioDespertadorIA.apk" download="CalendarioDespertadorIA.apk">Baixar APK</a>
-    <p class="tip">Dica: ao instalar, permita fontes desconhecidas nas configurações do Android.</p>
-    <p id="status"></p>
-  </main>
+<h1>Calendário Despertador IA</h1>
+<p>Baixe o instalador no celular e abra o arquivo para instalar.</p>
+<p><button class="btn" id="dl">Baixar APK</button></p>
+<p class="note">Se o Android pedir, permita instalar de fontes desconhecidas. Depois abra o app e toque em <strong>Buscar alarmes da Sofia</strong>.</p>
+<p id="status"></p>
+<script>
+async function downloadApk(){
+  const st = document.getElementById('status');
+  const btn = document.getElementById('dl');
+  btn.disabled = true;
+  try {
+    st.textContent = 'Preparando download…';
+    const man = await (await fetch('/manifest.json?ts=' + Date.now())).json();
+    let b64 = '';
+    for (let i = 0; i < man.n; i++) {
+      st.textContent = 'Baixando parte ' + (i+1) + ' de ' + man.n + '…';
+      b64 += await (await fetch('/chunks/' + i + '.txt?ts=' + Date.now())).text();
+    }
+    st.textContent = 'Montando APK…';
+    const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const blob = new Blob([bin], {type: 'application/vnd.android.package-archive'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = man.filename || 'CalendarioDespertadorIA.apk';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    st.textContent = 'Pronto. Se o download não começou, toque de novo.';
+  } catch (e) {
+    st.textContent = 'Falhou: ' + e;
+  } finally {
+    btn.disabled = false;
+  }
+}
+document.getElementById('dl').addEventListener('click', downloadApk);
+</script>
 </body>
 </html>
